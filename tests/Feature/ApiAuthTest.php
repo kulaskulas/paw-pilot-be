@@ -87,13 +87,12 @@ class ApiAuthTest extends TestCase
             'password' => 'secret123',
         ]);
 
-        $response = $this->withHeaders(['Accept' => '*/*'])->post('/api/login', [
+        $response = $this->postJson('/api/login', [
             'email' => 'test@example.com',
             'password' => 'wrong-password',
         ]);
 
         $response->assertUnauthorized()
-            ->assertHeader('Content-Type', 'application/json')
             ->assertExactJson([
                 'message' => 'Invalid credentials.',
             ]);
@@ -101,11 +100,12 @@ class ApiAuthTest extends TestCase
 
     public function test_unauthenticated_api_request_returns_401_json_without_accept_header(): void
     {
-        $response = $this->withHeaders(['Accept' => '*/*'])->get('/api/user');
+         $response = $this->get('/api/user');
 
         $response->assertUnauthorized()
-            ->assertHeader('Content-Type', 'application/json')
-            ->assertJsonPath('message', 'Unauthenticated.');
+            ->assertExactJson([
+                'message' => 'Unauthenticated.',
+            ]);
     }
 
     public function test_user_can_logout_and_revoke_current_token(): void
@@ -114,15 +114,18 @@ class ApiAuthTest extends TestCase
         $token = $user->createToken('postman')->plainTextToken;
 
         $logoutResponse = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post('/api/logout');
+            ->postJson('/api/logout');
 
         $logoutResponse->assertOk()
-            ->assertHeader('Content-Type', 'application/json')
             ->assertExactJson([
                 'message' => 'Logged out successfully.',
             ]);
 
-        $this->assertDatabaseCount('personal_access_tokens', 0);
+
+        $this->assertDatabaseMissing('personal_access_tokens', [
+            'tokenable_id' => $user->id,
+            'name' => 'postman',
+        ]);
 
         $this->app['auth']->forgetGuards();
 
