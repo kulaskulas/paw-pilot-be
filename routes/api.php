@@ -1,12 +1,22 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\GoogleAuthController;
+use App\Http\Controllers\DBTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
-    Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::middleware('has.profile')->group(function (): void {
+        Route::get('/user', [AuthController::class, 'user']);
+    });
 });
+
+if (app()->isLocal()) {
+    Route::post('/test-transaction', [DBTransactionController::class, 'testTransaction']);
+}

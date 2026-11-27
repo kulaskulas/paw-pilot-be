@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\UserProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -55,6 +56,12 @@ class ApiAuthTest extends TestCase
             'password' => 'secret123',
         ]);
 
+        UserProfile::create([
+            'user_id' => $user->id,
+            'first_name' => 'Test',
+            'last_name' => 'User',
+        ]);
+
         $loginResponse = $this->post('/api/login', [
             'email' => 'TEST@example.com',
             'password' => 'secret123',
@@ -78,6 +85,22 @@ class ApiAuthTest extends TestCase
             ->assertHeader('Content-Type', 'application/json')
             ->assertJsonPath('user.id', $user->id)
             ->assertJsonPath('user.email', 'test@example.com');
+    }
+
+    public function test_authenticated_user_without_profile_gets_403_json(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('postman')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$token)
+            ->get('/api/user');
+
+        $response->assertForbidden()
+            ->assertHeader('Content-Type', 'application/json')
+            ->assertExactJson([
+                'message' => 'Please complete your profile first.',
+                'code' => 'PROFILE_INCOMPLETE',
+            ]);
     }
 
     public function test_login_with_invalid_credentials_returns_401_json(): void

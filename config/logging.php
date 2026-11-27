@@ -135,6 +135,14 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        // for authentication logging
+        'auth' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'debug',
+            'days' => 30,
+        ]
+
     ],
 
 ];
