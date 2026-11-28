@@ -15,6 +15,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::prefix('user-profile')->group(function () {
         Route::post('/store', [UserProfileController::class, 'store']);
+        Route::post('/update', [UserProfileController::class, 'update']);
     });
 
     Route::middleware('has.profile')->group(function (): void {

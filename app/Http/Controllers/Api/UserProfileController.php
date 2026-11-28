@@ -27,7 +27,16 @@ class UserProfileController extends Controller
                 'message' => $e->getMessage(),
             ], 409);
         }
+    }
 
+    public function update(StoreUserProfileRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $this->userProfileService->updateUserProfile($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+        ], 200);
     }
 
 

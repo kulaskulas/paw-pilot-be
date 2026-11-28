@@ -19,8 +19,10 @@ class UserProfileService
         return UserProfile::create($data);
     }
 
-    public function updateUserProfile(UserProfile $userProfile, array $data): bool
+    public function updateUserProfile(array $data): bool
     {
+        $user = auth()->user();
+        $userProfile = $user->profile()->firstOrFail();
         return $userProfile->update($data);
     }
 }

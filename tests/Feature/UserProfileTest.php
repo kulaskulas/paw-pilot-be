@@ -35,10 +35,36 @@ class UserProfileTest extends TestCase
     //     //
     // }
 
-    // public function test_user_can_update_own_profile(): void
-    // {
-    //     //
-    // }
+    public function test_user_can_update_own_profile(): void
+    {
+        $user = $this->authenticateUser();
+
+        $user->profile()->create([
+            'first_name' => 'Karl',
+            'last_name' => 'Cabangon',
+            'phone_number' => '09123456789',
+            'address' => 'Philippines',
+        ]);
+
+         $updateProfile = $this->post('/api/user-profile/update', [
+            // 'user_id' => $user->id,
+            'first_name' => 'Updated',
+            'last_name' => 'Updated',
+            'phone_number' => null,
+            'address' => null,
+        ]);
+
+        $updateProfile->assertOk()
+            ->assertExactJson([
+                'message' => 'Profile updated successfully.',
+            ]);
+
+        $this->assertDatabaseHas('user_profiles', [
+            'user_id' => $user->id,
+            'first_name' => 'Updated',
+            'last_name' => 'Updated',
+        ]);
+    }
 
     public function test_user_can_create_profile_data(): void
     {
