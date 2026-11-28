@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Services\UserProfileService;
 use App\Http\Requests\StoreUserProfileRequest;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class UserProfileController extends Controller
 {
@@ -14,12 +15,19 @@ class UserProfileController extends Controller
     {}
 
     public function store(StoreUserProfileRequest $request): JsonResponse {
-        $validated = $request->validated();
-        $this->userProfileService->createUserProfile($validated);
+        try {
+            $validated = $request->validated();
+            $this->userProfileService->createUserProfile($validated);
 
-        return response()->json([
-            'message' => 'User profile created successfully.',
-        ], 201);
+            return response()->json([
+                'message' => 'User profile created successfully.',
+            ], 201);
+        } catch (ConflictHttpException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 409);
+        }
+
     }
 
 

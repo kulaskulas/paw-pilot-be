@@ -3,13 +3,18 @@
 namespace App\Services;
 
 use App\Models\UserProfile;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 class UserProfileService
 {
     public function createUserProfile(array $data): UserProfile
     {
-        $userId = auth()->id();
-        $data['user_id'] = $userId;
+        $user = auth()->user();
+        $data['user_id'] = $user->id;
+
+        if($user->profile()->exists()) {
+            throw new ConflictHttpException('Profile already exists.');
+        }
 
         return UserProfile::create($data);
     }

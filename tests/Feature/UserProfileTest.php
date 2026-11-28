@@ -11,8 +11,10 @@ use App\Models\UserProfile;
 
 class UserProfileTest extends TestCase
 {
+    private const TESTURL = '/api/user-profile/store';
 
     use RefreshDatabase, AuthenticatesUsers;
+
     /**
      * A basic feature test example.
      */
@@ -42,7 +44,7 @@ class UserProfileTest extends TestCase
     {
         $user = $this->authenticateUser();
 
-        $storeProfile = $this->post('/api/user-profile/store', [
+        $storeProfile = $this->post(self::TESTURL, [
             'user_id' => $user->id,
             'first_name' => 'test',
             'last_name' => 'test',
@@ -60,7 +62,7 @@ class UserProfileTest extends TestCase
     {
         $user = $this->authenticateUser();
 
-        $storeProfile = $this->post('/api/user-profile/store', [
+        $storeProfile = $this->post(self::TESTURL, [
             'user_id' => $user->id,
             'first_name' => '<script>test<script>',
             'last_name' => '<script>test</script>',
@@ -73,5 +75,26 @@ class UserProfileTest extends TestCase
                 'first_name',
                 'last_name',
             ]);
+    }
+
+    public function test_user_cannot_create_duplicate_profile(): void
+    {
+        $user = $this->authenticateUser();
+
+        $user->profile()->create([
+            'first_name' => 'Karl',
+            'last_name' => 'Cabangon',
+            'phone_number' => '094543635',
+        ]);
+
+        $response = $this->postJson(self::TESTURL, [
+            'first_name' => 'Another',
+            'last_name' => 'Profile',
+            'phone_number' => '09123456789',
+        ]);
+
+        $response->assertConflict();
+
+        $this->assertDatabaseCount('user_profiles', 1);
     }
 }
