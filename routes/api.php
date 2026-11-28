@@ -12,6 +12,7 @@ Route::post('/auth/google/exchange', [GoogleAuthController::class, 'exchange']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     Route::prefix('user-profile')->group(function () {
         Route::post('/store', [UserProfileController::class, 'store']);

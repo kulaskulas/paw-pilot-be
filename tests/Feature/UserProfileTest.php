@@ -37,7 +37,8 @@ class UserProfileTest extends TestCase
 
     public function test_user_can_update_own_profile(): void
     {
-        $user = $this->authenticateUser();
+        $auth = $this->authenticateUser();
+        $user = $auth['user'];
 
         $user->profile()->create([
             'first_name' => 'Karl',
@@ -68,7 +69,8 @@ class UserProfileTest extends TestCase
 
     public function test_user_can_create_profile_data(): void
     {
-        $user = $this->authenticateUser();
+        $auth = $this->authenticateUser();
+        $user = $auth['user'];
 
         $storeProfile = $this->post(self::TESTURL, [
             'user_id' => $user->id,
@@ -86,7 +88,8 @@ class UserProfileTest extends TestCase
 
     public function test_user_cannot_submit_html_in_profile(): void
     {
-        $user = $this->authenticateUser();
+        $auth = $this->authenticateUser();
+        $user = $auth['user'];
 
         $storeProfile = $this->post(self::TESTURL, [
             'user_id' => $user->id,
@@ -105,7 +108,8 @@ class UserProfileTest extends TestCase
 
     public function test_user_cannot_create_duplicate_profile(): void
     {
-        $user = $this->authenticateUser();
+        $auth = $this->authenticateUser();
+        $user = $auth['user'];
 
         $user->profile()->create([
             'first_name' => 'Karl',

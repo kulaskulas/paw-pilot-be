@@ -6,10 +6,14 @@ use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\AuthenticatesUsers;
+use Illuminate\Support\Facades\Hash;
 
 class ApiAuthTest extends TestCase
 {
-    use RefreshDatabase;
+    private const CHANGE_PASSWORD_URL = '/api/change-password';
+
+    use RefreshDatabase, AuthenticatesUsers;
 
     public function test_user_can_register_and_receive_json_with_token(): void
     {
@@ -89,8 +93,10 @@ class ApiAuthTest extends TestCase
 
     public function test_authenticated_user_without_profile_gets_403_json(): void
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('postman')->plainTextToken;
+        // $user = User::factory()->create();
+        // $token = $user->createToken('postman')->plainTextToken;
+        $auth = $this->authenticateUser();
+        $token = $auth['token'];
 
         $response = $this->withHeader('Authorization', 'Bearer '.$token)
             ->get('/api/user');
@@ -133,8 +139,12 @@ class ApiAuthTest extends TestCase
 
     public function test_user_can_logout_and_revoke_current_token(): void
     {
-        $user = User::factory()->create();
-        $token = $user->createToken('postman')->plainTextToken;
+        // $user = User::factory()->create();
+        // $token = $user->createToken('postman')->plainTextToken;
+
+        $auth = $this->authenticateUser();
+        $token = $auth['token'];
+        $user = $auth['user'];
 
         $logoutResponse = $this->withHeader('Authorization', 'Bearer '.$token)
             ->postJson('/api/logout');
@@ -157,4 +167,80 @@ class ApiAuthTest extends TestCase
             ->assertUnauthorized()
             ->assertHeader('Content-Type', 'application/json');
     }
+
+    public function test_user_can_change_password(): void
+    {
+        $attribute = [
+            'name' => 'choks',
+            'email' => 'choks@gmail.com',
+            'password' => Hash::make('password1234')
+        ];
+
+        $this->authenticateUser($attribute);
+
+        $changePasswordResponse = $this->post(self::CHANGE_PASSWORD_URL, [
+            'current_password' => 'password1234',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password'
+        ]);
+
+        $changePasswordResponse->assertOk()
+            ->assertExactJson([
+                'message' => 'Password changed successfully.',
+            ]);
+    }
+
+    public function test_user_cannot_change_password_with_incorrect_current_password(): void
+    {
+        $attribute = [
+            'name' => 'choks',
+            'email' => 'choks@gmail.com',
+            'password' => Hash::make('password1234')
+        ];
+
+        $auth = $this->authenticateUser($attribute);
+        $user = $auth['user'];
+
+        $changePasswordResponse = $this->post(self::CHANGE_PASSWORD_URL, [
+            'current_password' => 'incorrect-current-password',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password'
+        ]);
+
+        $changePasswordResponse->assertUnprocessable()
+           ->assertJsonValidationErrors(['current_password']);
+
+        $this->assertTrue(
+            Hash::check('password1234', $user->fresh()->password)
+        );
+    }
+
+    public function test_user_cannot_change_password_with_new_password_not_match(): void
+    {
+        $attribute = [
+            'name' => 'choks',
+            'email' => 'choks@gmail.com',
+            'password' => Hash::make('password1234')
+        ];
+
+        $auth = $this->authenticateUser($attribute);
+        $user = $auth['user'];
+
+        $changePasswordResponse = $this->post(self::CHANGE_PASSWORD_URL, [
+            'current_password' => 'password1234',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password-not-match'
+        ]);
+
+        $changePasswordResponse->assertUnprocessable()
+           ->assertJsonValidationErrors(['password']);
+
+        $this->assertTrue(
+            Hash::check('password1234', $user->fresh()->password)
+        );
+    }
+
+
 }
+
+

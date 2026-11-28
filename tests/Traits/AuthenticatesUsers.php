@@ -6,7 +6,7 @@ use App\Models\User;
 
 trait AuthenticatesUsers
 {
-    protected function authenticateUser(array $attributes = []): User
+    protected function authenticateUser(array $attributes = []): array
     {
         $user = User::factory()->create($attributes);
 
@@ -14,6 +14,10 @@ trait AuthenticatesUsers
 
         $this->withToken($token);
 
-        return $user;
+        // return $user;
+        return [
+            'user' => $user,
+            'token' => $token
+        ];
     }
 }
