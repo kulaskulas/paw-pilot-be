@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Traits\AuthenticatesUsers;
 
 use App\Models\User;
 use App\Models\UserProfile;
@@ -11,7 +12,7 @@ use App\Models\UserProfile;
 class UserProfileTest extends TestCase
 {
 
-    use RefreshDatabase;
+    use RefreshDatabase, AuthenticatesUsers;
     /**
      * A basic feature test example.
      */
@@ -37,25 +38,40 @@ class UserProfileTest extends TestCase
     //     //
     // }
 
+    public function test_user_can_create_profile_data(): void
+    {
+        $user = $this->authenticateUser();
+
+        $storeProfile = $this->post('/api/user-profile/store', [
+            'user_id' => $user->id,
+            'first_name' => 'test',
+            'last_name' => 'test',
+            'phone_number' => '094543635',
+            'address' => 'address',
+        ]);
+
+        $storeProfile->assertCreated()
+            ->assertExactJson([
+                'message' => 'User profile created successfully.',
+            ]);
+    }
+
     public function test_user_cannot_submit_html_in_profile(): void
     {
-        $user = User::factory()->create();
+        $user = $this->authenticateUser();
 
-        $token = $user->createToken('postman')->plainTextToken;
-
-        $storeProfile = $this->withHeader('Authorization', 'Bearer '.$token)
-            ->post('/api/user-profile/store', [
+        $storeProfile = $this->post('/api/user-profile/store', [
             'user_id' => $user->id,
             'first_name' => '<script>test<script>',
             'last_name' => '<script>test</script>',
             'phone_number' => '094543635',
-            'address' => null
+            'address' => null,
         ]);
 
         $storeProfile->assertUnprocessable()
             ->assertJsonValidationErrors([
-            'first_name',
-            'last_name',
-        ]);
+                'first_name',
+                'last_name',
+            ]);
     }
 }
